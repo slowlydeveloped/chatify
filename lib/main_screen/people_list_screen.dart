@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class PeopleListScreen extends StatefulWidget {
@@ -11,7 +10,7 @@ class PeopleListScreen extends StatefulWidget {
 class _PeopleListScreenState extends State<PeopleListScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: Text("People"),
       ),

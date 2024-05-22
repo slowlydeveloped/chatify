@@ -10,7 +10,7 @@ class GroupListScreen extends StatefulWidget {
 class _GroupListScreenState extends State<GroupListScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: Text("Group"),
       ),
