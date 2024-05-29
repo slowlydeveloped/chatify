@@ -1,8 +1,10 @@
-import 'package:chatify/main_screen/chat_list_screen.dart';
-import 'package:chatify/main_screen/group_list_Screen.dart';
-import 'package:chatify/main_screen/people_list_screen.dart';
-
+//Paths
 import '../util/assets_manager.dart';
+import '../main_screen/chat_list_screen.dart';
+import '../main_screen/group_list_Screen.dart';
+import '../main_screen/people_list_screen.dart';
+
+//Dependencies
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -20,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     pageController
-        .dispose(); // Dispose the controller when the widget is removed
+        .dispose();
     super.dispose();
   }
 
@@ -40,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: PageView(
-        controller: pageController, // Use the state-level PageController
+        controller: pageController, 
         onPageChanged: (index) {
           setState(() {
             currentIndex = index;
