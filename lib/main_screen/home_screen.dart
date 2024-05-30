@@ -1,5 +1,8 @@
 //Paths
-import '../util/assets_manager.dart';
+import 'package:chatify/util/constants.dart';
+
+import '../util/global_methods.dart';
+import '../providers/authentication_provider.dart';
 import '../main_screen/chat_list_screen.dart';
 import '../main_screen/group_list_Screen.dart';
 import '../main_screen/people_list_screen.dart';
@@ -7,6 +10,7 @@ import '../main_screen/people_list_screen.dart';
 //Dependencies
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,28 +25,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    pageController
-        .dispose();
+    pageController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthenticationProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text("Chatify"),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
+            padding: const EdgeInsets.all(8.0),
+            child: userImageWidget(
+              imageUrl: authProvider.userModel!.image,
               radius: 20,
-              backgroundImage: AssetImage(AssetManager.userImage),
+              onTap: () {
+                // Navigate to user profie
+                Navigator.pushNamed(
+                  context,
+                  Constants.userProfileScreen,
+                  arguments: authProvider.userModel!.uId
+                );
+              },
             ),
-          )
+          ),
+          const SizedBox(width: 10)
         ],
       ),
       body: PageView(
-        controller: pageController, 
+        controller: pageController,
         onPageChanged: (index) {
           setState(() {
             currentIndex = index;

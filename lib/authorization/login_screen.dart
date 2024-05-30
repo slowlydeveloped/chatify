@@ -1,12 +1,13 @@
-import '/util/assets_manager.dart';
-
+// Dependencies
 import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
+//Paths
 import '../providers/authentication_provider.dart';
+import '/util/assets_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
+  final FocusNode focusNode = FocusNode();
 
   Country selectedCountry = Country(
       phoneCode: '91',
@@ -63,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: GoogleFonts.openSans()),
               const SizedBox(height: 20),
               TextField(
+                focusNode: focusNode,
                 controller: phoneController,
                 maxLength: 10,
                 keyboardType: TextInputType.number,
@@ -70,6 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() {
                     phoneController.text = value;
                   });
+                  if (phoneController.text.length >=10) {
+                    focusNode.unfocus();
+                  }
                 },
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
@@ -102,12 +108,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     suffixIcon: phoneController.text.length > 9
                         ? authProvider.isLoading
                             ? const Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: CircularProgressIndicator(),
-                            )
+                                padding: EdgeInsets.all(12.0),
+                                child: CircularProgressIndicator(),
+                              )
                             : InkWell(
                                 onTap: () {
-                                  //sign in with phone number 
+                                  //sign in with phone number
                                   authProvider.signInWithPhoneNumber(
                                       phoneNumber:
                                           "+${selectedCountry.phoneCode}${phoneController.text}",

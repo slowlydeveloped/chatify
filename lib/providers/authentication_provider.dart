@@ -1,10 +1,16 @@
+// Dependencies
+import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+// Paths
 import '../models/user_model.dart';
+import '../util/constants.dart';
+import '../util/global_methods.dart';
 
 class AuthenticationProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -22,6 +28,63 @@ class AuthenticationProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  // Check authentication state of the user
+  Future<bool> chechAuthenticationState() async {
+    bool isSignedIn = false;
+    await Future.delayed(const Duration(seconds: 2));
+    if (_auth.currentUser != null) {
+      _uid = _auth.currentUser!.uid;
+
+      // get user data from the fireStore
+      await getUserDataFromFirestore();
+
+      // save the user data in Shared Preferences
+      await saveUserDataToSharedPrefrences();
+      notifyListeners();
+      isSignedIn = true;
+    } else {
+      isSignedIn = false;
+    }
+    return isSignedIn;
+  }
+
+  // Check if the user exists in the firestore
+  Future<bool> checkIfUserExists() async {
+    DocumentSnapshot documentSnapshot =
+        await _firestore.collection(Constants.users).doc(_uid).get();
+
+    if (documentSnapshot.exists) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // get user data from the firestore
+  Future<void> getUserDataFromFirestore() async {
+    DocumentSnapshot documentSnapshot =
+        await _firestore.collection(Constants.users).doc(_uid).get();
+    _userModel =
+        UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
+
+    notifyListeners();
+  }
+
+  // Save user data in Shared prefrences
+  Future<void> saveUserDataToSharedPrefrences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(Constants.userModel, jsonEncode(userModel!.toMap()));
+  }
+
+  // Get user data from Shared prefrences
+  Future<void> getUserDataFromSharedPrefrences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String userModelString = prefs.getString(Constants.userModel) ?? " ";
+    _userModel = UserModel.fromMap(jsonDecode(userModelString));
+    _uid = userModel!.uId;
+    notifyListeners();
+  }
 
   // Sign in with phone number
   Future<void> signInWithPhoneNumber(
@@ -50,13 +113,97 @@ class AuthenticationProvider extends ChangeNotifier {
         codeSent: (String verificationId, int? resendToken) async {
           _isLoading = false;
           notifyListeners();
+
+          Navigator.of(context).pushNamed(Constants.otpScreen, arguments: {
+            Constants.verificationId: verificationId,
+            Constants.phoneNumber: phoneNumber
+          });
           print("Navigate to OTP screen");
-          // ScaffoldMessenger.of(context)
-          //     .showSnackBar(const SnackBar(content: Text("Code Sent")));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Code Sent")));
         },
-        codeAutoRetrievalTimeout: (String verificationId){
-          
-        }
-        );
+        codeAutoRetrievalTimeout: (String verificationId) {});
+  }
+
+  Future<void> verifyOtpCode({
+    required String verificationId,
+    required String otpCode,
+    required BuildContext context,
+    required Function onSuccess,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId, smsCode: otpCode);
+
+    await _auth.signInWithCredential(credential).then((value) async {
+      _uid = value.user!.uid;
+      _phoneNumber = value.user!.phoneNumber;
+      _isSuccessful = true;
+      _isLoading = false;
+      onSuccess();
+      notifyListeners();
+    }).catchError((e) {
+      _isLoading = false;
+      _isSuccessful = false;
+      notifyListeners();
+      showSnackBar(context, e.toString());
+    });
+  }
+
+  // Save user data in firestore
+  void saveUserDatatoFirestore({
+    required UserModel userModel,
+    required File? fileImage,
+    required Function onSuccess,
+    required Function onFailure,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (fileImage != null) {
+        String imageUrl = await storeFiletoStore(
+            file: fileImage,
+            refernce: "${Constants.userImages}/ ${Constants.uid}");
+        userModel.image = imageUrl;
+      }
+
+      userModel.lastSeen = DateTime.now().microsecondsSinceEpoch.toString();
+      userModel.createdAt = DateTime.now().microsecondsSinceEpoch.toString();
+
+      _userModel = userModel;
+      _uid = userModel.uId;
+      // Save User data to firestore
+      await _firestore
+          .collection(Constants.users)
+          .doc(userModel.uId)
+          .set(userModel.toMap());
+
+      _isLoading = false;
+      onSuccess();
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      onFailure(e.toString());
+    }
+  }
+
+  // Store file to storage and obtain ifileUrl
+  Future<String> storeFiletoStore({
+    required File file,
+    required String refernce,
+  }) async {
+    UploadTask uploadTask = _storage.ref(refernce).putFile(file);
+    TaskSnapshot taskSnapshot = await uploadTask;
+    String fileUrl = await taskSnapshot.ref.getDownloadURL();
+    return fileUrl;
+  }
+
+  // get user stream
+  Stream<DocumentSnapshot> userStream({required String userId}) {
+    return _firestore.collection(Constants.users).doc(userId).snapshots();
   }
 }
