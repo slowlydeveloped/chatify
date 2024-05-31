@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'chatify-83550',
     storageBucket: 'chatify-83550.appspot.com',
   );
+
 }

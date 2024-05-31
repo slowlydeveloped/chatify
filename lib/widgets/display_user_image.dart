@@ -28,7 +28,7 @@ class DisplayUserImage extends StatelessWidget {
                 right: 0,
                 child: CircleAvatar(
                   radius: 15,
-                  backgroundColor: Colors.green,
+                  backgroundColor: Theme.of(context).primaryColor,
                   child: InkWell(
                     onTap: onPressed,
                     child: const Icon(
@@ -52,11 +52,11 @@ class DisplayUserImage extends StatelessWidget {
                 right: 0,
                 child: InkWell(
                   onTap: onPressed,
-                  child: const CircleAvatar(
+                  child:  CircleAvatar(
                     radius: 15,
-                    backgroundColor: Colors.green,
-                    child: Icon(
-                      Icons.camera_alt,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    child: const Icon(
+                      Icons.edit,
                       color: Colors.white,
                       size: 20,
                     ),
