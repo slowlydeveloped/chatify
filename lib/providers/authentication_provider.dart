@@ -273,16 +273,49 @@ class AuthenticationProvider extends ChangeNotifier {
 
   // Function to remove friends from our friends list
   Future<void> removeFriend({required String friendId}) async {
-
     // Cammand to remove our uid from the friend's list.
     await _firestore.collection(Constants.users).doc(friendId).update({
       Constants.friendsUids: FieldValue.arrayRemove([_uid])
     });
 
-     // Cammand to remove friend's uid from our friend's list.
+    // Cammand to remove friend's uid from our friend's list.
     await _firestore.collection(Constants.users).doc(_uid).update({
       Constants.friendsUids: FieldValue.arrayRemove([friendId])
     });
+  }
+
+  // Get a List of friends from firebase store
+  Future<List<UserModel>> getFriendsList(String uid) async {
+    List<UserModel> friendsList = [];
+    DocumentSnapshot documentSnapshot =
+        await _firestore.collection(Constants.users).doc(uid).get();
+    List<dynamic> friendsUids = documentSnapshot.get(Constants.friendsUids);
+
+    for (String friendUid in friendsUids) {
+      DocumentSnapshot documentSnapshot =
+          await _firestore.collection(Constants.users).doc(friendUid).get();
+      UserModel friend =
+          UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
+      friendsList.add(friend);
+    }
+    return friendsList;
+  }
+
+  // Get a list of friend requests from firebase store
+  Future<List<UserModel>> getFriendsRequestList(String uid) async {
+    List<UserModel> friendsRequestList = [];
+    DocumentSnapshot documentSnapshot =
+        await _firestore.collection(Constants.users).doc(uid).get();
+    List<dynamic> friendsRequestUids = documentSnapshot.get(Constants.friendRequestUids);
+
+    for (String friendRequestUid in friendsRequestUids) {
+      DocumentSnapshot documentSnapshot =
+          await _firestore.collection(Constants.users).doc(friendRequestUid).get();
+      UserModel friend =
+          UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
+      friendsRequestList.add(friend);
+    }
+    return friendsRequestList;
   }
 
 // Function to logout the user from the device.

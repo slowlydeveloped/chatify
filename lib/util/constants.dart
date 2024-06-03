@@ -11,6 +11,8 @@ class Constants {
   static const String settingsScreen = '/settingsScreen';
   static const String landingScreen = '/landingScreen';
   static const String userProfileScreen = '/userProfileScreen';
+  static const String friendListScreen = '/friendListScreen';
+  static const String friendRequestListScreen = '/friendRequestListScreen';
 
 // UserModel
   static const String uid = 'uid';
@@ -31,4 +33,10 @@ class Constants {
   static const String users = 'users';
   static const String userModel = 'userModel';
   static const String userImages = 'userImages';
+}
+
+enum FriendViewType{
+  friends,
+  friendRequests,
+  groupView,
 }

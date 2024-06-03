@@ -1,12 +1,7 @@
-// Dependencies
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:provider/provider.dart';
-
-// Paths
 import '../models/user_model.dart';
 import '../providers/authentication_provider.dart';
 import '../util/global_methods.dart';
@@ -21,13 +16,13 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  File? finalFileImage;
-
   @override
   Widget build(BuildContext context) {
+    // Retrieve the current user from the authentication provider
     final currentUser = context.read<AuthenticationProvider>().userModel!;
-    // Get user data from arguments
+    // Get the UID of the profile being viewed from the route arguments
     final uid = ModalRoute.of(context)!.settings.arguments as String;
+
     return Scaffold(
       appBar: AppBar(
         leading: AppBarBackButton(onPressed: () {
@@ -36,12 +31,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         centerTitle: true,
         title: const Text("Profile"),
         actions: [
+          // Show settings icon if the profile being viewed belongs to the current user
           currentUser.uId == uid
-              ?
-              // logout button
-              IconButton(
+              ? IconButton(
                   onPressed: () async {
-                    // Navigate to the setting screen with uid as arguments
                     await Navigator.pushNamed(context, Constants.settingsScreen,
                         arguments: uid);
                   },
@@ -50,6 +43,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ],
       ),
       body: StreamBuilder(
+        // Stream the user data from Firestore
         stream: context.read<AuthenticationProvider>().userStream(userId: uid),
         builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
           if (snapshot.hasError) {
@@ -58,73 +52,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          popContext() {
-            Navigator.of(context).pop();
-          }
 
-          Future<void> cropImage(filepath) async {
-            if (filepath != null) {
-              CroppedFile? croppedFile = await ImageCropper().cropImage(
-                sourcePath: filepath,
-                maxHeight: 800,
-                maxWidth: 800,
-                compressQuality: 90,
-              );
-              if (croppedFile != null) {
-                setState(() {
-                  finalFileImage = File(croppedFile.path);
-                });
-              }
-            }
-          }
-
-          void selectImage(bool fromCamera) async {
-            finalFileImage = await pickImageMethod(
-                fromCamera: fromCamera,
-                onFail: (String message) {
-                  showSnackBar(context, message);
-                });
-            // Crop Images
-            await cropImage(finalFileImage?.path);
-            popContext();
-          }
-
-          void showBottomSheet() {
-            showModalBottomSheet(
-              context: context,
-              builder: (context) => SizedBox(
-                height: MediaQuery.of(context).size.height / 5,
-                child: Column(
-                  children: [
-                    ListTile(
-                      onTap: () {
-                        selectImage(true);
-                      },
-                      leading: const Icon(Icons.camera_alt),
-                      title: const Text("Camera"),
-                    ),
-                    ListTile(
-                      onTap: () {
-                        selectImage(false);
-                      },
-                      leading: const Icon(Icons.image),
-                      title: const Text("Gallery"),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
+          // Parse the user data from the snapshot
           final userModel =
               UserModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
             child: Column(
               children: [
+                // Display the user's profile image
                 userImageWidget(
                     radius: 60, onTap: () {}, imageUrl: userModel.image),
                 const SizedBox(height: 10),
+                // Display the user's name
                 Text(
                   userModel.name,
                   style: GoogleFonts.openSans(
@@ -133,6 +74,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                // Display the user's phone number if the profile belongs to the current user
                 currentUser.uId == userModel.uId
                     ? Text(
                         userModel.phoneNumber,
@@ -143,12 +85,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       )
                     : const SizedBox.shrink(),
                 const SizedBox(height: 10),
+                // Build the friend request button
                 buildFriendRequestButton(
                     currentUser: currentUser, userModel: userModel),
                 const SizedBox(height: 10),
+                // Build the view friend button
                 buildViewFriendButton(
                     currentUser: currentUser, userModel: userModel),
                 const SizedBox(height: 10),
+                // Display the "About Me" section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -176,6 +121,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ],
                 ),
+                // Display the user's "About Me" text
                 Text(
                   userModel.aboutMe,
                   style: GoogleFonts.openSans(
@@ -191,129 +137,160 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  // Friend Request button
+  // Function to build the friend request button based on the relationship status
   Widget buildFriendRequestButton({
     required UserModel currentUser,
     required UserModel userModel,
   }) {
     if (currentUser.uId == userModel.uId &&
         userModel.friendRequestUids.isNotEmpty) {
-      // We are in our profile
       return customElevatedButton(
-        width: MediaQuery.of(context).size.width * 0.7,
-        onPressed: () {},
-        label: "View Friend Requests ",
-      );
+          width: MediaQuery.of(context).size.width * 0.7,
+          onPressed: () {
+            Navigator.pushNamed(context, Constants.friendRequestListScreen);
+          },
+          label: "View Friend Requests",
+          backgroundColor: Theme.of(context).cardColor,
+          textColor: Theme.of(context).primaryColor);
     } else {
-      // Not in our profile
       return const SizedBox.shrink();
     }
   }
 
-  // Friend List button
+  // Function to build the view friend button based on the relationship status
   Widget buildViewFriendButton({
     required UserModel currentUser,
     required UserModel userModel,
   }) {
-    if (currentUser.uId == userModel.uId &&
-        userModel.friendRequestUids.isNotEmpty) {
-      // We are in our profile
+    if (currentUser.uId == userModel.uId) {
       return customElevatedButton(
-        width: MediaQuery.of(context).size.width * 0.7,
-        onPressed: () {},
-        label: "View Friends ",
-      );
-    } else {
-      // Not in our profile then Show a send request button
-      if (currentUser.uId != userModel.uId) {
-        // show cancel friend request  text if the user has already sent the friend request.
-        if (userModel.friendRequestUids.contains(currentUser.uId)) {
-          return customElevatedButton(
-              width: MediaQuery.of(context).size.width * 0.7,
+          width: MediaQuery.of(context).size.width * 0.7,
+          onPressed: () {
+            Navigator.pushNamed(context, Constants.friendListScreen);
+          },
+          label: "View Friends",
+          backgroundColor: Theme.of(context).cardColor,
+          textColor: Theme.of(context).primaryColor);
+    } else if (userModel.friendsUids.contains(currentUser.uId)) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          customElevatedButton(
+              width: MediaQuery.of(context).size.width * 0.4,
               onPressed: () async {
-                await context
-                    .read<AuthenticationProvider>()
-                    .cancelFriendRequest(friendUid: userModel.uId)
-                    .whenComplete(() {
-                  showSnackBar(context, " Friend Request Cancelled ");
-                });
-              },
-              label: "Cancel Friend Request ");
-        }
-        // Show accept friend request text if the user has already sent the friend request.
-        else if (userModel.sentFriendRequestUids.contains(currentUser.uId)) {
-          return customElevatedButton(
-              width: MediaQuery.of(context).size.width * 0.7,
-              onPressed: () async {
-                await context
-                    .read<AuthenticationProvider>()
-                    .acceptFriendRequest(friendUid: userModel.uId)
-                    .whenComplete(() {
-                  showSnackBar(
-                      context, " You are now friends with ${userModel.name}");
-                });
-              },
-              label: "Accept Friend Request");
-        } else if (userModel.friendsUids.contains(currentUser.uId)) {
-          return Row(
-            children: [
-              // Unfriend button
-              customElevatedButton(
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  onPressed: () async {
-                    await context
-                        .read<AuthenticationProvider>()
-                        .removeFriend(friendId: userModel.uId)
-                        .whenComplete(() {
-                      showSnackBar(context,
-                          "You're no longer friends with ${userModel.name}");
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("Unfriend"),
+                        content: Text(
+                          "Are yoiu sure you want to nfriend ${userModel.name}?",
+                          textAlign: TextAlign.center,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text("Cancel"),
+                          ),
+                          TextButton(
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                await context
+                                    .read<AuthenticationProvider>()
+                                    .removeFriend(friendId: userModel.uId)
+                                    .whenComplete(() {
+                                  showSnackBar(context,
+                                      "You're no longer friends with ${userModel.name}");
+                                });
+                              },
+                              child: const Text("Unfriend"))
+                        ],
+                      );
                     });
-                  },
-                  label: "Unfriend"),
-
-              // Chat button
-              customElevatedButton(
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  onPressed: ()  {
-                    // Navigate to chat screen.
-                  },
-                  label: "Send Message"),
-            ],
-          );
-        }
-        // Show send friend request text if the user has not sent the friend request.
-        else {
-          return customElevatedButton(
-              width: MediaQuery.of(context).size.width * 0.7,
-              onPressed: () async {
-                await context
-                    .read<AuthenticationProvider>()
-                    .sendFriendRequest(friendUid: userModel.uId)
-                    .whenComplete(() {
-                  showSnackBar(context, "Friend Request sent");
-                });
               },
-              label: "Send Friend Request");
-        }
-      } else {
-        return const SizedBox.shrink();
-      }
+              label: "Unfriend",
+              backgroundColor:
+                  Theme.of(context).buttonTheme.colorScheme!.primary,
+              textColor: Colors.white),
+          customElevatedButton(
+              width: MediaQuery.of(context).size.width * 0.4,
+              onPressed: () {
+                // Navigate to chat screen
+              },
+              label: "Chat",
+              backgroundColor: Theme.of(context).cardColor,
+              textColor: Theme.of(context).primaryColor),
+        ],
+      );
+    } else if (userModel.friendRequestUids.contains(currentUser.uId)) {
+      return customElevatedButton(
+          width: MediaQuery.of(context).size.width * 0.7,
+          onPressed: () async {
+            await context
+                .read<AuthenticationProvider>()
+                .cancelFriendRequest(friendUid: userModel.uId)
+                .whenComplete(() {
+              showSnackBar(context, "Friend Request Cancelled");
+            });
+          },
+          label: "Cancel Friend Request",
+          backgroundColor: Theme.of(context).cardColor,
+          textColor: Theme.of(context).primaryColor);
+    } else if (userModel.sentFriendRequestUids.contains(currentUser.uId)) {
+      return customElevatedButton(
+          width: MediaQuery.of(context).size.width * 0.7,
+          onPressed: () async {
+            await context
+                .read<AuthenticationProvider>()
+                .acceptFriendRequest(friendUid: userModel.uId)
+                .whenComplete(() {
+              showSnackBar(
+                  context, "You are now friends with ${userModel.name}");
+            });
+          },
+          label: "Accept Friend Request",
+          backgroundColor: Theme.of(context).cardColor,
+          textColor: Theme.of(context).primaryColor);
+    } else {
+      return customElevatedButton(
+          onPressed: () async {
+            await context
+                .read<AuthenticationProvider>()
+                .sendFriendRequest(friendUid: userModel.uId)
+                .whenComplete(() {
+              showSnackBar(context, "Friend Request sent");
+            });
+          },
+          label: "Send Friend Request",
+          width: MediaQuery.of(context).size.width * 0.7,
+          backgroundColor: Theme.of(context).cardColor,
+          textColor: Theme.of(context).primaryColor);
     }
   }
 
-  // Custom Elevated Button
-  Widget customElevatedButton({
-    required VoidCallback onPressed,
-    required String label,
-    required double width,
-  }) {
+  // Function to create a custom elevated button
+  Widget customElevatedButton(
+      {required VoidCallback onPressed,
+      required String label,
+      required double width,
+      required Color backgroundColor,
+      required Color textColor}) {
     return SizedBox(
       width: width,
       child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
         onPressed: onPressed,
         child: Text(
           label.toUpperCase(),
-          style: GoogleFonts.openSans(fontWeight: FontWeight.bold),
+          style: GoogleFonts.openSans(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
       ),
     );

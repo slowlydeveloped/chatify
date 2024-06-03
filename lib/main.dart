@@ -17,6 +17,8 @@ import '/main_screen/home_screen.dart';
 import '/main_screen/people_list_screen.dart';
 import '/main_screen/settings_screen.dart';
 import 'main_screen/user_profile_screen.dart';
+import '/main_screen/friend_request_screen.dart';
+import '/main_screen/friends_screen.dart';
 import 'util/constants.dart';
 
 void main() async {
@@ -68,8 +70,9 @@ class MyApp extends StatelessWidget {
           Constants.chatScreen: (context) => const ChatListScreen(),
           Constants.homeScreen: (context) => const HomeScreen(),
           Constants.profileScreen: (context) => const SettingScreen(),
-          Constants.userProfileScreen: (context) => const UserProfileScreen()
-          
+          Constants.userProfileScreen: (context) => const UserProfileScreen(),
+          Constants.friendListScreen: (context) => const FriendListScreen(),
+          Constants.friendRequestListScreen : (context) => const FriendRequestScreen()
         },
       ),
     );
