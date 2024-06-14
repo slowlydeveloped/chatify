@@ -20,6 +20,7 @@ import 'main_screen/user_profile_screen.dart';
 import '/main_screen/friend_request_screen.dart';
 import '/main_screen/friends_screen.dart';
 import 'util/constants.dart';
+import '/main_screen/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +73,8 @@ class MyApp extends StatelessWidget {
           Constants.profileScreen: (context) => const SettingScreen(),
           Constants.userProfileScreen: (context) => const UserProfileScreen(),
           Constants.friendListScreen: (context) => const FriendListScreen(),
-          Constants.friendRequestListScreen : (context) => const FriendRequestScreen()
+          Constants.friendRequestListScreen : (context) => const FriendRequestScreen(),
+          Constants.chatScreen : (context) => const ChatScreen(),
         },
       ),
     );

@@ -217,7 +217,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           customElevatedButton(
               width: MediaQuery.of(context).size.width * 0.4,
               onPressed: () {
-                // Navigate to chat screen
+                // Navigate to chat screen with following arguments :
+                // 1. friend uid, friend name, friend image and group string
+                Navigator.pushNamed(context, Constants.chatScreen, arguments: [
+                  userModel.uId,
+                  userModel.name,
+                  userModel.image,
+                  '',
+                ]);
               },
               label: "Chat",
               backgroundColor: Theme.of(context).cardColor,

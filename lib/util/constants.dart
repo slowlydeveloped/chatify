@@ -3,7 +3,7 @@ class Constants {
   static const String loginScreen = '/loginScreen';
   static const String otpScreen = '/otpScreen';
   static const String homeScreen = '/homeScreen';
-  static const String chatScreen = '/chatScreen';
+  static const String chatListScreen = '/chatListScreen';
   static const String profileScreen = '/profileScreen';
   static const String userInformationScreen = '/userInformationScreen';
   static const String groupListScreen = '/groupListScreen';
@@ -13,6 +13,7 @@ class Constants {
   static const String userProfileScreen = '/userProfileScreen';
   static const String friendListScreen = '/friendListScreen';
   static const String friendRequestListScreen = '/friendRequestListScreen';
+  static const String chatScreen = '/chatScreen';
 
 // UserModel
   static const String uid = 'uid';
